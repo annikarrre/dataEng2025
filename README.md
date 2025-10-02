@@ -42,5 +42,3 @@ psql -h localhost -U postgres -f sql/demo_queries.sql
 Notes
 
 ..to be added..
-psql -h localhost -U postgres -f sql/dml_insert_sample_data.sql
-psql -h localhost -U postgres -f sql/demo_queries.sql
