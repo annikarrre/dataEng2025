@@ -12,12 +12,11 @@ CREATE TABLE dim_date (
 CREATE TABLE dim_weather (
     weather_id SERIAL PRIMARY KEY,
     date_id INT REFERENCES dim_date(date_id),
-    region VARCHAR(100),
     avg_temp NUMERIC,
     precipitation NUMERIC,
     wind_speed NUMERIC,
     humidity NUMERIC,
-    sunlight_hours NUMERIC
+    sunlight NUMERIC
 );
 
 -- Dimension: Medication
