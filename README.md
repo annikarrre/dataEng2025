@@ -5,17 +5,17 @@ Group 4: Annika Remmelgas, Agnes Kala, Imbi Jaks, Liis Andresen
 
 Business Brief
 
-We analyze the relationship between weather conditions and medication sales in Estonia to support healthcare planning.
+Objective: To analyze the relationships between weather conditions and medications sold in order to support planning in the healthcare sector. 
 
 KPIs: Medications sold/month, Avg. temperature, Sunny days
 
-Business Questions: Seasonal spikes, weather effects, forecasting demand
-
 Data & Tools
 
-Data: Medication sales (Tervisekassa), Weather data (Ilmateenistus/ECAD)
+Data: Medication sales (Tervisekassa, https://tervisekassa.ee/muudud-ravimid-diagnoosi-ja-arsti-eriala-loikes )
 
-Tools: PostgreSQL, dbt, Airflow, Superset, Docker, Python
+  Weather data (Ilmateenistus/ECAD, https://www.ilmateenistus.ee/kliima/ajaloolised-ilmaandmed/  )
+
+Tools: Docker, PostgreSQL, dbt, Airflow, Superset,  Python
 
 Schema
 
@@ -25,17 +25,13 @@ dim_date, dim_weather, dim_medication, dim_diagnosis
 
 Repo Contents
 
-sql/ddl_create_tables.sql → schema (DDL)
+sql/ddl_create_tables.sql - schema (DDL)
 
-sql/dml_insert_sample_data.sql → sample inserts (DML)
-
-sql/demo_queries.sql → example queries
+sql/demo_queries.sql - example queries
 
 Run Instructions
 
 psql -h localhost -U postgres -f sql/ddl_create_tables.sql
-
-psql -h localhost -U postgres -f sql/dml_insert_sample_data.sql
 
 psql -h localhost -U postgres -f sql/demo_queries.sql
 
