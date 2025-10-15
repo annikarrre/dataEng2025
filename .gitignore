@@ -1,0 +1,8 @@
+# --- Docker ---
+logs/
+pgdata/
+pgdata_airflow/
+pgtmp/
+
+# --- Env / Secrets ---
+.env
