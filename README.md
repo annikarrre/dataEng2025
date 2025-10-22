@@ -1,40 +1,28 @@
-# dataEng2025
-Project 1: Data Architecture & Modeling
+# Data Engineering 2025 – Project
+**Group 4:** Annika Remmelgas, Agnes Kala, Imbi Jaks, Liis Andresen  
 
-Group 4: Annika Remmelgas, Agnes Kala, Imbi Jaks, Liis Andresen
+## Project Overview
+This project implements a complete **data-warehouse & ETL pipeline** that analyzes how **weather conditions** and **sunshine** relate to **medication sales in Estonia**.
 
-Business Brief
+**Goal:** support healthcare planning by exploring correlations between climate and medication demand.  
 
-Objective: To analyze the relationships between weather conditions and medications sold in order to support planning in the healthcare sector. 
+**Key KPIs**
+- Medications sold per month  
+- Average temperature per month  
+- Average sunny hours per month  
 
-KPIs: Medications sold/month, Avg. temperature, Sunny days
+**Main business questions**
+1. How does temperature affect medication sales?  
+2. Which medication types show seasonal spikes?  
+3. Does extreme weather drive specific prescriptions?
 
-Data & Tools
+**How to set up project**
 
-Data: Medication sales (Tervisekassa, https://tervisekassa.ee/muudud-ravimid-diagnoosi-ja-arsti-eriala-loikes )
+1. git clone <this repo>
+2. cd DATAENG2025
+3. cp .env.example .env
+4. docker compose up -d --build
+5. docker exec -it clickhouse clickhouse-client --multiquery --queries-file=/sql/01_create_databases.sql
+6. docker exec -it clickhouse clickhouse-client --multiquery --queries-file=/sql/02_create_bronze.sql
 
-  Weather data (Ilmateenistus/ECAD, https://www.ilmateenistus.ee/kliima/ajaloolised-ilmaandmed/  )
 
-Tools: Docker, PostgreSQL, dbt, Airflow, Superset,  Python
-
-Schema
-
-Star schema with central fact_medication_sales table + dimensions:
-
-dim_date, dim_weather, dim_medication, dim_diagnosis
-
-Repo Contents
-
-sql/ddl_create_tables.sql - schema (DDL)
-
-sql/demo_queries.sql - example queries
-
-Run Instructions
-
-psql -h localhost -U postgres -f sql/ddl_create_tables.sql
-
-psql -h localhost -U postgres -f sql/demo_queries.sql
-
-Notes
-
-..to be added..
