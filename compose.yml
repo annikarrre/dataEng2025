@@ -3,7 +3,6 @@ version: "3.9"
 services:
   # --- Airflow metadata database ---
   airflow-db:
-    container_name: airflow-db
     image: postgres:16.4
     environment:
       POSTGRES_USER: ${AIRFLOW_DB_USER}
@@ -22,7 +21,6 @@ services:
   # --- ClickHouse Warehouse ---
   clickhouse:
     image: clickhouse/clickhouse-server:24.8
-    container_name: clickhouse
     restart: always
     ports:
       - "8123:8123"
@@ -38,7 +36,6 @@ services:
 
   # --- Pipeline Postgres for other data ---
   db:
-    container_name: db
     image: postgres:16.4
     environment:
       POSTGRES_USER: ${PIPELINE_DB_USER}
@@ -56,7 +53,6 @@ services:
 
   # --- pgAdmin UI for both databases ---
   pgadmin:
-    container_name: pgadmin
     image: elestio/pgadmin:REL-8_10
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
@@ -73,7 +69,6 @@ services:
   # --- Airflow Initialization ---
   airflow-init:
     image: apache/airflow:2.8.1
-    container_name: airflow-init
     entrypoint: /bin/bash
     command:
       - -c
@@ -103,7 +98,6 @@ services:
       context: .
       dockerfile: Dockerfile.airflow
     image: apache/airflow:2.8.1
-    container_name: airflow-webserver
     command: webserver
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
@@ -136,7 +130,6 @@ services:
       context: .
       dockerfile: Dockerfile.airflow
     image: apache/airflow:2.8.1
-    container_name: airflow-scheduler
     command: scheduler
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor

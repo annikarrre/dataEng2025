@@ -19,11 +19,11 @@ This project implements a complete **data-warehouse & ETL pipeline** that analyz
 ## How to set up project
 
 
-1. git clone <this repo>
+1. git clone https://github.com/annikarrre/dataEng2025.git
 2. cd DATAENG2025
 3. cp .env.example .env
 4. docker compose up -d --build
 5. docker exec -it clickhouse clickhouse-client --multiquery --queries-file=/sql/01_create_databases.sql
-6. docker exec -it clickhouse clickhouse-client --multiquery --queries-file=/sql/02_create_bronze.sql
+6. docker exec -it clickhouse clickhouse-client --multiquery --queries-file=/sql/02_create_bronze_sunshine.sql
 
 
