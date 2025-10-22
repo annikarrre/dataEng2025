@@ -16,7 +16,8 @@ This project implements a complete **data-warehouse & ETL pipeline** that analyz
 2. Which medication types show seasonal spikes?  
 3. Does extreme weather drive specific prescriptions?
 
-**How to set up project**
+## How to set up project
+
 
 1. git clone <this repo>
 2. cd DATAENG2025
