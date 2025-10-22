@@ -3,6 +3,10 @@ logs/
 pgdata/
 pgdata_airflow/
 pgtmp/
+clickhouse_data/
+
+airflow/logs/
+airflow/datasets/*
 
 # --- Env / Secrets ---
 .env
