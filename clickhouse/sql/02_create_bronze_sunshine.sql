@@ -17,15 +17,12 @@ CREATE TABLE IF NOT EXISTS bronze.sunshine_sources
 ENGINE = ReplacingMergeTree()
 ORDER BY (staid, souid);
 
-CREATE TABLE IF NOT EXISTS bronze.sunshine_daily
-(
+CREATE TABLE bronze.sunshine_daily (
   staid UInt32,
   souid UInt32,
-  date Date,
-  ss_raw Int32,
-  q_ss UInt8,
-  _ingested_at DateTime DEFAULT now()
+  date  Date32,
+  ss_raw Nullable(Int32),
+  q_ss  Nullable(UInt8)
 )
-ENGINE = ReplacingMergeTree()
-PARTITION BY toYYYYMM(date)
-ORDER BY (staid, date);
+ENGINE = MergeTree
+ORDER BY (souid, date);

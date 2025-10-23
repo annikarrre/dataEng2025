@@ -2,5 +2,8 @@ FROM apache/airflow:2.8.1
 
 USER airflow
 RUN pip install --no-cache-dir \
-    clickhouse-connect pandas pyarrow requests \
-    dbt-core dbt-clickhouse
+    "clickhouse-connect==0.6.10" \
+    "pandas<2.2" \
+    "pyarrow<15" \
+    requests openpyxl
+

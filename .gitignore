@@ -7,6 +7,6 @@ clickhouse_data/
 
 airflow/logs/
 airflow/datasets/*
-
+dags/__pycache__
 # --- Env / Secrets ---
 .env

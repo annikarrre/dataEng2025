@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   # --- Airflow metadata database ---
   airflow-db:
@@ -26,9 +24,10 @@ services:
       - "8123:8123"
       - "9000:9000"
     volumes:
-      - ./clickhouse_data:/var/lib/clickhouse/
+      - clickhouse_data:/var/lib/clickhouse
       - ./airflow/datasets:/var/lib/clickhouse/user_files
       - ./clickhouse/sql:/sql
+      - ./clickhouse/config/users.d:/etc/clickhouse-server/users.d
     ulimits:
       nofile:
         soft: 262144
@@ -97,7 +96,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.airflow
-    image: apache/airflow:2.8.1
     command: webserver
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
@@ -129,7 +127,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.airflow
-    image: apache/airflow:2.8.1
     command: scheduler
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
@@ -154,5 +151,6 @@ services:
     restart: always
 
 volumes:
+  clickhouse_data: {}
   pgdata_airflow:
   pgdata:

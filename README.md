@@ -23,7 +23,7 @@ This project implements a complete **data-warehouse & ETL pipeline** that analyz
 2. cd DATAENG2025
 3. cp .env.example .env
 4. docker compose up -d --build
-5. docker exec -it clickhouse clickhouse-client --multiquery --queries-file=/sql/01_create_databases.sql
-6. docker exec -it clickhouse clickhouse-client --multiquery --queries-file=/sql/02_create_bronze_sunshine.sql
+5. docker exec -it data_warehouse-clickhouse-1 clickhouse-client -u default --password mysecret --multiquery --queries-file=/sql/02_create_bronze_sunshine.sql
+6. docker compose exec airflow-webserver airflow dags trigger bronze_sunshine_ingest
 
 
