@@ -25,5 +25,11 @@ This project implements a complete **data-warehouse & ETL pipeline** that analyz
 4. docker compose up -d --build
 5. docker exec -it data_warehouse-clickhouse-1 clickhouse-client -u default --password mysecret --multiquery --queries-file=/sql/02_create_bronze_sunshine.sql
 6. docker compose exec airflow-webserver airflow dags trigger bronze_sunshine_ingest
+7. docker exec -it data_warehouse-clickhouse-1 clickhouse-client -u default --password mysecret --multiquery --queries-file=/sql/02_create_bronze_weather.sql
+8. docker compose exec airflow-webserver airflow dags trigger bronze_weather_ingest
+9. docker exec -it data_warehouse-clickhouse-1 clickhouse-client -u default --password mysecret --multiquery --queries-file=/sql/02_create_bronze_medication.sql
+10. docker compose exec airflow-webserver airflow dags trigger bronze_medication_ingest
 
+Kui vaja teha muudatusi pythoni failides, siis käivitada peale muudatuse tegemist:
 
+1. docker compose restart airflow-webserver airflow-scheduler
