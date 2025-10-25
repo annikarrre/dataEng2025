@@ -37,8 +37,8 @@ def _norm(s):
     s = re.sub(r"\s+", " ", s.strip())
     return s
 
-def _clean_wind_dir_float(series: pd.Series) -> pd.Series:
-    """Return float in [0..360] or None; safe for Nullable(Float32)."""
+def _clean_wind_dir_int(series: pd.Series) -> pd.Series:
+    """Return int in [0..360] or None; safe for Nullable(UInt16)."""
     def conv(v):
         if v is None or v is pd.NA or (isinstance(v, float) and np.isnan(v)):
             return None
@@ -46,16 +46,18 @@ def _clean_wind_dir_float(series: pd.Series) -> pd.Series:
         if s == "" or s.lower() in {"nan", "none", "null"}:
             return None
         try:
-            val = float(s)
+            val = float(s)  # read as float
         except Exception:
             return None
         if not np.isfinite(val):
             return None
-        return float(val) if 0.0 <= val <= 360.0 else None
+        # Check range and convert to int
+        return int(round(val)) if 0 <= val <= 360 else None
 
+    # Do conversion
     s2 = series.astype(object).map(conv).astype(object)
-    s2 = s2.map(lambda x: None if (x is None or (isinstance(x, float) and np.isnan(x))) else float(x))
-    return s2
+    # Set data type
+    return s2.astype("Int64")
 
 def _to_python_scalars(df: pd.DataFrame) -> pd.DataFrame:
     """Convert pandas/NumPy nulls/scalars → plain Python types."""
@@ -260,7 +262,7 @@ def _read_one_xlsx(path: str, station: str) -> pd.DataFrame:
             df[f] = pd.to_numeric(df[f], errors="coerce")
 
     if "wind_dir_deg" in df.columns:
-        df["wind_dir_deg"] = _clean_wind_dir_float(df["wind_dir_deg"])
+        df["wind_dir_deg"] = _clean_wind_dir_int(df["wind_dir_deg"])
 
     # Station & final shape
     df["station"] = station
@@ -305,8 +307,19 @@ def load_weather():
             piece = df.iloc[start:end]
 
             batch = []
+
             for row in piece.itertuples(index=False, name=None):
-                batch.append(list(row))
+                clean_row = []
+                for col_name, val in zip(OUT_COLS, row):
+                    if col_name == "wind_dir_deg":
+                        if val is None or (isinstance(val, float) and np.isnan(val)):
+                            clean_row.append(None)
+                        else:
+                            clean_row.append(int(val))
+                    else:
+                        clean_row.append(val)
+                batch.append(clean_row)
+
                 if len(batch) >= BATCH_SZ:
                     _insert_chunk(client, batch)
                     total_rows += len(batch)
