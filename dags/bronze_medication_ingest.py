@@ -219,9 +219,15 @@ def _read_one_xlsx(path: str) -> pd.DataFrame:
     print(f"[meds] Final sample:\n{df.head(3)}")
     return df
 
+_table_truncated = False
+
 def _insert_chunk(client, rows):
+    global _table_truncated
     if not rows:
         return
+    if not _table_truncated:
+        client.command("TRUNCATE TABLE bronze.medications_monthly")
+        _table_truncated = True
     client.insert("bronze.medications_monthly", rows, column_names=OUT_COLS)
 
 def load_medications(**context):

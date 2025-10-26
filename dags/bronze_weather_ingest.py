@@ -278,9 +278,15 @@ def _read_one_xlsx(path: str, station: str) -> pd.DataFrame:
 
     return df
 
+_table_truncated = False
+
 def _insert_chunk(client, rows):
+    global _table_truncated
     if not rows:
         return
+    if not _table_truncated:
+        client.command("TRUNCATE TABLE bronze.weather_hourly")
+        _table_truncated = True
     client.insert("bronze.weather_hourly", rows, column_names=OUT_COLS)
 
 def load_weather(**context):

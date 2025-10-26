@@ -21,6 +21,17 @@ def _to_float(v, default=None):
     except Exception:
         return default
 
+_table_truncated = False
+
+def _insert_chunk(client, rows):
+    global _table_truncated
+    if not rows:
+        return
+    if not _table_truncated:
+        client.command("TRUNCATE TABLE bronze.sunshine_daily")
+        _table_truncated = True
+    client.insert("bronze.sunshine_daily", rows, column_names=["staid","souid","date","ss_raw","q_ss"])
+
 def load_sources(**context):
     data_dir = context["params"].get("data_dir", DEFAULT_DATA_DIR)
     path = os.path.join(data_dir, "sources.txt")
@@ -100,18 +111,11 @@ def load_daily(**context):
                 batch.append([staid, souid, date_obj, ss_raw, q_ss])
 
                 if len(batch) >= 20000:
-                    client.insert(
-                        "bronze.sunshine_daily",
-                        batch,
-                        column_names=["staid","souid","date","ss_raw","q_ss"]
-                    )
+                    _insert_chunk(client, batch)
                     batch = []
     if batch:
-        client.insert(
-            "bronze.sunshine_daily",
-            batch,
-            column_names=["staid","souid","date","ss_raw","q_ss"]
-        )
+        _insert_chunk(client, batch)
+        batch = []
 
 def dq_check():
     client = _client()
