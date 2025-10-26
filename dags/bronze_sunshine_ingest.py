@@ -3,7 +3,7 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 import os, glob
 
-DATA_DIR = "/opt/airflow/datasets/sunshine"
+DEFAULT_DATA_DIR = "/opt/airflow/datasets/sunshine"
 
 def _client():
     import clickhouse_connect
@@ -21,8 +21,9 @@ def _to_float(v, default=None):
     except Exception:
         return default
 
-def load_sources():
-    path = os.path.join(DATA_DIR, "sources.txt")
+def load_sources(**context):
+    data_dir = context["params"].get("data_dir", DEFAULT_DATA_DIR)
+    path = os.path.join(data_dir, "sources.txt")
     if not os.path.exists(path):
         print("sources.txt not found:", path)
         return
@@ -58,10 +59,11 @@ def load_sources():
             column_names=["staid","souid","station_name","country","lat","lon","elevation","begin","end","parname"]
         )
 
-def load_daily():
-    files = glob.glob(os.path.join(DATA_DIR, "SS_SOUID*.txt"))
+def load_daily(**context):
+    data_dir = context["params"].get("data_dir", DEFAULT_DATA_DIR)
+    files = glob.glob(os.path.join(data_dir, "SS_SOUID*.txt"))
     if not files:
-        print("no SS_SOUID*.txt files found in", DATA_DIR)
+        print("no SS_SOUID*.txt files found in", data_dir)
         return
     client = _client()
     batch = []
@@ -127,6 +129,9 @@ with DAG(
     catchup=False,
     tags=["bronze","sunshine"],
     default_args={"owner": "you"},
+    params={
+        "data_dir": "/opt/airflow/datasets/sunshine",
+    },
 ):
     t1 = PythonOperator(task_id="load_sources", python_callable=load_sources)
     t2 = PythonOperator(task_id="load_daily", python_callable=load_daily)

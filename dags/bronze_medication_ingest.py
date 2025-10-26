@@ -7,7 +7,7 @@ import os, glob, re, unicodedata
 import pandas as pd
 import numpy as np
 
-DATA_DIR = "/opt/airflow/datasets/medications"
+DEFAULT_DATA_DIR = "/opt/airflow/datasets/medications"
 BATCH_SZ = 2_000  # smaller batches to avoid memory spikes
 
 OUT_COLS = [
@@ -224,11 +224,12 @@ def _insert_chunk(client, rows):
         return
     client.insert("bronze.medications_monthly", rows, column_names=OUT_COLS)
 
-def load_medications():
+def load_medications(**context):
+    data_dir = context["params"].get("data_dir", DEFAULT_DATA_DIR)
     client = _client()
-    files = sorted(glob.glob(os.path.join(DATA_DIR, "*.xlsx")))
+    files = sorted(glob.glob(os.path.join(data_dir, "*.xlsx")))
     if not files:
-        print(f"[meds] No .xlsx files in {DATA_DIR}")
+        print(f"[meds] No .xlsx files in {data_dir}")
         return
 
     total = 0
@@ -276,6 +277,9 @@ with DAG(
     catchup=False,
     tags=["bronze","medications"],
     default_args={"owner": "you"},
+    params={
+        "data_dir": "/opt/airflow/datasets/medications",
+    },
 ):
     t1 = PythonOperator(task_id="load_medications", python_callable=load_medications)
     t2 = PythonOperator(task_id="dq_check", python_callable=dq_check)

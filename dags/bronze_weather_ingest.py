@@ -11,7 +11,7 @@ import numpy as np
 
 # ------------------ Config ------------------
 
-DATA_DIR = "/opt/airflow/datasets/weather"
+DEFAULT_DATA_DIR = "/opt/airflow/datasets/weather"
 
 # Memory controls
 BATCH_SZ = 5_000
@@ -283,11 +283,12 @@ def _insert_chunk(client, rows):
         return
     client.insert("bronze.weather_hourly", rows, column_names=OUT_COLS)
 
-def load_weather():
+def load_weather(**context):
+    data_dir = context["params"].get("data_dir", DEFAULT_DATA_DIR)
     client = _client()
-    files = sorted(glob.glob(os.path.join(DATA_DIR, "*.xlsx")))
+    files = sorted(glob.glob(os.path.join(data_dir, "*.xlsx")))
     if not files:
-        print(f"No .xlsx files in {DATA_DIR}")
+        print(f"No .xlsx files in {data_dir}")
         return
 
     total_rows = 0
@@ -353,6 +354,9 @@ with DAG(
     catchup=False,
     tags=["bronze","weather"],
     default_args={"owner": "you"},
+    params={
+        "data_dir": "/opt/airflow/datasets/weather",
+    },
 ):
     t1 = PythonOperator(task_id="load_weather", python_callable=load_weather)
     t2 = PythonOperator(task_id="dq_check", python_callable=dq_check)
