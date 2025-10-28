@@ -1,9 +1,20 @@
 FROM apache/airflow:2.8.1
 
-USER airflow
-RUN pip install --no-cache-dir \
-    "clickhouse-connect==0.6.10" \
-    "pandas<2.2" \
-    "pyarrow<15" \
-    requests openpyxl
+# git is needed by dbt
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/*
 
+USER airflow
+COPY airflow/requirements.txt /opt/airflow/requirements.txt
+RUN pip install --no-cache-dir -r /opt/airflow/requirements.txt
+
+# Patch Py3.8 typing issue in clickhouse-connect 0.6.22
+RUN python - <<'PY'
+import clickhouse_connect, pathlib, typing
+p = pathlib.Path(clickhouse_connect.__file__).parent / 'datatypes' / 'network.py'
+txt = p.read_text()
+txt = txt.replace('list[IPv6Address]', 'typing.List[IPv6Address]')
+txt = txt.replace('list[IPv4Address]', 'typing.List[IPv4Address]')
+p.write_text(txt)
+print('Patched:', p)
+PY

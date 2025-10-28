@@ -1,0 +1,13 @@
+name: 'clickhouse_project'
+version: '1.0'
+config-version: 2
+
+profile: 'clickhouse_project'
+
+model-paths: ['models']
+target-path: 'target'
+clean-targets: ['target']
+
+models:
+  clickhouse_project:
+    +materialized: table

@@ -8,5 +8,7 @@ clickhouse_data/
 airflow/logs/
 airflow/datasets/*
 dags/__pycache__
+dbt/target
+dbt/.user.yml
 # --- Env / Secrets ---
 .env

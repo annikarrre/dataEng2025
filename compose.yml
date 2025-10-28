@@ -111,6 +111,7 @@ services:
       - ./logs:/opt/airflow/logs
       - ./airflow/datasets:/opt/airflow/datasets
       - ./airflow/include:/opt/airflow/include
+      - ./dbt:/opt/airflow/dbt
     depends_on:
       airflow-init:
         condition: service_completed_successfully
@@ -139,6 +140,7 @@ services:
       - ./logs:/opt/airflow/logs
       - ./airflow/datasets:/opt/airflow/datasets
       - ./airflow/include:/opt/airflow/include
+      - ./dbt:/opt/airflow/dbt
     depends_on:
       airflow-init:
         condition: service_completed_successfully

@@ -23,12 +23,15 @@ This project implements a complete **data-warehouse & ETL pipeline** that analyz
 2. cd DATAENG2025
 3. cp .env.example .env
 4. docker compose up -d --build
-5. docker exec -it data_warehouse-clickhouse-1 clickhouse-client -u default --password mysecret --multiquery --queries-file=/sql/02_create_bronze_sunshine.sql
-6. docker compose exec airflow-webserver airflow dags trigger bronze_sunshine_ingest
-7. docker exec -it data_warehouse-clickhouse-1 clickhouse-client -u default --password mysecret --multiquery --queries-file=/sql/02_create_bronze_weather.sql
-8. docker compose exec airflow-webserver airflow dags trigger bronze_weather_ingest
-9. docker exec -it data_warehouse-clickhouse-1 clickhouse-client -u default --password mysecret --multiquery --queries-file=/sql/02_create_bronze_medication.sql
-10. docker compose exec airflow-webserver airflow dags trigger bronze_medication_ingest
+5. docker exec -it data_warehouse-clickhouse-1 clickhouse-client -u default --password mysecret --multiquery --queries-file=/sql/01_create_databases.sql
+6. docker exec -it data_warehouse-clickhouse-1 clickhouse-client -u default --password mysecret --multiquery --queries-file=/sql/02_create_bronze_sunshine.sql
+7. docker compose exec airflow-webserver airflow dags trigger bronze_sunshine_ingest
+8. docker exec -it data_warehouse-clickhouse-1 clickhouse-client -u default --password mysecret --multiquery --queries-file=/sql/02_create_bronze_weather.sql
+9. docker compose exec airflow-webserver airflow dags trigger bronze_weather_ingest
+10. docker exec -it data_warehouse-clickhouse-1 clickhouse-client -u default --password mysecret --multiquery --queries-file=/sql/02_create_bronze_medication.sql
+11. docker compose exec airflow-webserver airflow dags trigger bronze_medication_ingest
+12. docker compose exec airflow-webserver bash -lc   'dbt run --profiles-dir /opt/airflow/dbt --project-dir /opt/airflow/dbt --select silver'
+13. ..
 
 Kui vaja teha muudatusi pythoni failides, siis käivitada peale muudatuse tegemist:
 
