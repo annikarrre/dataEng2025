@@ -31,7 +31,8 @@ This project implements a complete **data-warehouse & ETL pipeline** that analyz
 10. docker exec -it data_warehouse-clickhouse-1 clickhouse-client -u default --password mysecret --multiquery --queries-file=/sql/02_create_bronze_medication.sql
 11. docker compose exec airflow-webserver airflow dags trigger bronze_medication_ingest
 12. docker compose exec airflow-webserver bash -lc   'dbt run --profiles-dir /opt/airflow/dbt --project-dir /opt/airflow/dbt --select silver'
-13. ..
+13. docker compose exec airflow-webserver bash -lc 'dbt run --profiles-dir /opt/airflow/dbt --project-dir /opt/airflow/dbt --select gold'
+
 
 Kui vaja teha muudatusi pythoni failides, siis käivitada peale muudatuse tegemist:
 
