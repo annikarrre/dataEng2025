@@ -11,3 +11,7 @@ clean-targets: ['target']
 models:
   clickhouse_project:
     +materialized: table
+    silver:
+      +schema: silver
+    gold:
+      +schema: gold
