@@ -9,7 +9,8 @@ CREATE TABLE IF NOT EXISTS bronze.weather_hourly (
   wind_dir_deg Nullable(UInt16),
   wind_ms      Nullable(Float32),
   wind_gust_ms Nullable(Float32),
-  precip_mm    Nullable(Float32)
+  precip_mm    Nullable(Float32),
+  humidity     Nullable(UInt16)
 )
 ENGINE = MergeTree
 ORDER BY (station, ts);

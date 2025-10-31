@@ -6,7 +6,6 @@ WITH months AS (
 
 SELECT
     formatDateTime(month_start, '%Y%m') AS date_id,
-    month_start,
     toYear(month_start) AS year,
     toMonth(month_start) AS month,
     toQuarter(month_start) AS quarter,

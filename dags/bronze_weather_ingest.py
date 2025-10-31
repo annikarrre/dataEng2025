@@ -59,6 +59,26 @@ def _clean_wind_dir_int(series: pd.Series) -> pd.Series:
     # Set data type
     return s2.astype("Int64")
 
+def _clean_humidity_int(series: pd.Series) -> pd.Series:
+    """Return int in [0..100] or None; safe for Nullable(Int32)."""
+    def conv(v):
+        if v is None or v is pd.NA or (isinstance(v, float) and np.isnan(v)):
+            return None
+        s = _norm(v)
+        if s == "" or s.lower() in {"nan", "none", "null"}:
+            return None
+        try:
+            val = float(s)
+        except Exception:
+            return None
+        if not np.isfinite(val):
+            return None
+        # Check range and convert to int
+        return int(round(val)) if 0 <= val <= 100 else None
+
+    s2 = series.astype(object).map(conv).astype(object)
+    return s2.astype("Int32")
+
 def _to_python_scalars(df: pd.DataFrame) -> pd.DataFrame:
     """Convert pandas/NumPy nulls/scalars → plain Python types."""
     def _one(v):
@@ -75,7 +95,7 @@ def _to_python_scalars(df: pd.DataFrame) -> pd.DataFrame:
 
 OUT_COLS = [
     "station","ts","t_air_c","t_min_c","t_max_c",
-    "wind_dir_deg","wind_ms","wind_gust_ms","precip_mm"
+    "wind_dir_deg","wind_ms","wind_gust_ms","precip_mm","humidity"
 ]
 
 # Canonical to possible header aliases (after _norm)
@@ -94,6 +114,7 @@ ALIASES = {
     "wind_ms": {"10 minuti keskmine tuule kiirus m/s", "10-min avg wind speed m/s", "WS (m/s)"},
     "wind_gust_ms": {"Tunni maksimum tuule kiirus m/s", "Hourly max wind speed m/s", "Gust (m/s)"},
     "precip_mm": {"Tunni sademete summa mm", "Hourly precipitation mm", "RR (mm)"},
+    "humidity": {"Suhteline õhuniiskus %", "Humidity", "Rel humidity", "RH (%)", "RH"},
 }
 
 # Minimum set to parse rows
@@ -228,7 +249,7 @@ def _read_one_xlsx(path: str, station: str) -> pd.DataFrame:
     # Restrict to likely columns; keep weather fields if present
     maybe_cols = {
         "year","month","day","time_utc",
-        "t_air_c","t_min_c","t_max_c","wind_dir_deg","wind_ms","wind_gust_ms","precip_mm"
+        "t_air_c","t_min_c","t_max_c","wind_dir_deg","wind_ms","wind_gust_ms","precip_mm","humidity"
     }
     keep = [c for c in df.columns if c in maybe_cols]
     df = df[keep].copy()
@@ -256,13 +277,24 @@ def _read_one_xlsx(path: str, station: str) -> pd.DataFrame:
     ]
     df = df.dropna(subset=["ts"])
 
+    # Safe numeric conversion for humidity
+    if "humidity" in df.columns:
+        try:
+            df["humidity"] = pd.to_numeric(df["humidity"], errors="coerce").astype("Int32")
+            df["humidity"] = df["humidity"].where(pd.notnull(df["humidity"]), None)
+        except Exception as e:
+            print(f"[weather][ERROR] Humidity conversion failed in {os.path.basename(path)}: {e}")
+
     # Numeric coercions (coerce garbage → NaN)
-    for f in ["t_air_c","t_min_c","t_max_c","wind_ms","wind_gust_ms","precip_mm"]:
+    for f in ["t_air_c","t_min_c","t_max_c","wind_ms","wind_gust_ms","precip_mm","humidity"]:
         if f in df.columns:
             df[f] = pd.to_numeric(df[f], errors="coerce")
 
     if "wind_dir_deg" in df.columns:
         df["wind_dir_deg"] = _clean_wind_dir_int(df["wind_dir_deg"])
+
+    if "humidity" in df.columns:
+        df["humidity"] = _clean_humidity_int(df["humidity"])
 
     # Station & final shape
     df["station"] = station
@@ -318,7 +350,7 @@ def load_weather(**context):
             for row in piece.itertuples(index=False, name=None):
                 clean_row = []
                 for col_name, val in zip(OUT_COLS, row):
-                    if col_name == "wind_dir_deg":
+                    if col_name == "wind_dir_deg" or col_name == "humidity":
                         if val is None or (isinstance(val, float) and np.isnan(val)):
                             clean_row.append(None)
                         else:
