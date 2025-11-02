@@ -52,7 +52,7 @@ seasonal spikes related to weather conditions?**
 ![Demo_query_2.png](Screenshots/Demo_query_2.png)
 
 **Q3: Does extreme weather (heatwaves, cold) correlate with higher prescription
-rates for certain diagnoses?
+rates for certain diagnoses?**
 ![Demo_query_3.png](Screenshots/Demo_query_3.png)
 
 
