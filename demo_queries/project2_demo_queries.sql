@@ -1,4 +1,5 @@
 --Q1: How does monthly average temperature affect the volume of medication purchases?
+
 SELECT
     d.year,
     d.month,
@@ -18,6 +19,7 @@ ORDER BY
     d.month;
 
 --Q2: Are there specific types of medications (cold/flu, allergy, depression) that show seasonal spikes related to weather conditions?
+
 SELECT
     m.ingredient AS medication_type,
     d.year,
@@ -86,16 +88,17 @@ ORDER BY
     d.month ASC;
 
 --Q5: How many of various medications should be supplied per period?
+
 SELECT
     d.month,
     m.package_label,
     AVG(f.total_packages) AS avg_packages_per_month
 FROM
-    model_gold.fact f
+    model_gold.fact_medication_sales f
 INNER JOIN
     model_gold.dim_medications m ON f.medication_id = m.medication_id
 INNER JOIN
-    model_gold.dim_date d ON f.m.date_id = d.date_id
+    model_gold.dim_date d ON f.date_id = d.date_id
 GROUP BY
     d.month, m.package_label
 ORDER BY
