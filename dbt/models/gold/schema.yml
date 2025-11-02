@@ -1,0 +1,39 @@
+version: 2
+
+models:
+  - name: fact_medication_sales
+    description: "Fact table with monthly medication sales linked to weather and sunshine"
+    columns:
+      - name: fact_id
+        description: "Primary key for the fact table"
+        tests:
+          - unique
+          - not_null
+
+      - name: date_id
+        description: "Month of the sale"
+        tests:
+          - not_null
+
+      - name: medication_id
+        description: "Foreign key to dim_medication"
+        tests:
+          - not_null
+
+      - name: weather_id
+        description: "Foreign key to dim_weather"
+        tests:
+          - not_null
+
+      - name: sunshine_id
+        description: "Foreign key to dim_sunshine"
+        tests:
+          - not_null
+
+      - name: total_packages
+        description: "Number of medication packages sold"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_medications')
+              field: medication_id

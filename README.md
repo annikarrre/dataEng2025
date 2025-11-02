@@ -38,6 +38,13 @@ Kui vaja teha muudatusi pythoni failides, siis käivitada peale muudatuse tegemi
 
 1. docker compose restart airflow-webserver airflow-scheduler
 
+## How to run dbt test
+
+
+1. docker compose exec airflow-webserver bash -lc 'dbt test --project-dir /opt/airflow/dbt --profiles-dir /opt/airflow/dbt --select fact_medication_sales'    
+2. docker compose exec airflow-webserver bash -lc 'dbt test --project-dir /opt/airflow/dbt --profiles-dir /opt/airflow/dbt --select assert_positive_total_packages'
+
+
 ## Screenshots
 ### Airflow DAG
 ![Airflow_DAG.png](Screenshots/Airflow_DAG.png)
