@@ -9,7 +9,7 @@ per_month AS (
         avg(sunshine_hours)  AS avg_daily,
         count()              AS obs_count,
         uniqExact(staid)     AS station_count
-    FROM silver.sunshine_cleaned
+    FROM model_silver.sunshine_cleaned
     GROUP BY month_start
 ),
 avg_station_month AS (
@@ -21,7 +21,7 @@ avg_station_month AS (
             toStartOfMonth(date) AS month_start,
             staid,
             sum(sunshine_hours)  AS station_month_total_hours
-        FROM silver.sunshine_cleaned
+        FROM model_silver.sunshine_cleaned
         GROUP BY month_start, staid
     )
     GROUP BY month_start
