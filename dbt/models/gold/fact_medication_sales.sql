@@ -5,7 +5,6 @@ WITH meds AS (
     m.medication_id,
     m.year,
     m.month,
-    /* Build YYYYMM once from year/month (no BestEffort parsing needed) */
     formatDateTime(
       toDate(concat(toString(m.year), '-', toString(m.month), '-01')),
       '%Y%m'
@@ -21,7 +20,6 @@ wx AS (
   SELECT
     weather_id,
     date_id,
-    /* Rename to the short aliases you used */
     toFloat64(avg_monthly_temp)          AS avg_temp,
     toFloat64(avg_monthly_humidity)      AS humidity,
     toFloat64(avg_monthly_precipitation) AS precipitation
@@ -37,7 +35,6 @@ sun AS (
 )
 
 SELECT
-  /* Stable surrogate key from (date_id, medication_id) */
   cityHash64(concat(toString(m.date_id), toString(m.medication_id))) AS fact_id,
 
   m.date_id,
