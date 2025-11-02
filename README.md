@@ -37,3 +37,7 @@ This project implements a complete **data-warehouse & ETL pipeline** that analyz
 Kui vaja teha muudatusi pythoni failides, siis käivitada peale muudatuse tegemist:
 
 1. docker compose restart airflow-webserver airflow-scheduler
+
+## Screenshots
+
+![Airflow_DAG.png](Screenshots/Airflow_DAG.png)
