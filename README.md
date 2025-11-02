@@ -39,5 +39,17 @@ Kui vaja teha muudatusi pythoni failides, siis käivitada peale muudatuse tegemi
 1. docker compose restart airflow-webserver airflow-scheduler
 
 ## Screenshots
-
+### Airflow DAG
 ![Airflow_DAG.png](Screenshots/Airflow_DAG.png)
+
+### Demo Queries
+**Q1: How does monthly average temperature affect the volume of medication
+purchases?**
+![Demo_query_1.png](Screenshots/Demo_query_1.png)
+
+**Q2: Are there specific types of medications (cold/flu, allergy, depression) that show
+seasonal spikes related to weather conditions?**
+![Demo_query_2.png](Screenshots/Demo_query_2.png)
+
+**Q5: How many of various medications should be supplied per period?**
+![Demo_query_5.png](Screenshots/Demo_query_5.png)
