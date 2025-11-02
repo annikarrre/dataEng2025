@@ -12,15 +12,16 @@ This project implements a complete **data-warehouse & ETL pipeline** that analyz
 - Average sunny hours per month  
 
 **Main business questions**
-1. How does temperature affect medication sales?  
-2. Which medication types show seasonal spikes?  
-3. Does extreme weather drive specific prescriptions?
+1. How does monthly average temperature affect the volume of medication purchases?
+2. Are there specific types of medications (cold/flu, allergy, depression) that show seasonal spikes related to weather conditions?
+3. Does extreme weather (heatwaves, cold) correlate with higher prescription rates for certain diagnoses?
+4. Can weather patterns be used to forecast future medication demand (for example flu outbreaks during colder months, depression increases during colder months)?
+5. How many of various medications should be supplied per period?
 
 ## How to set up project
 
-
 1. git clone https://github.com/annikarrre/dataEng2025.git
-2. cd DATAENG2025
+2. cd dataEng2025
 3. cp .env.example .env
 4. docker compose up -d --build
 5. docker exec -it data_warehouse-clickhouse-1 clickhouse-client -u default --password mysecret --multiquery --queries-file=/sql/01_create_databases.sql
@@ -34,8 +35,7 @@ This project implements a complete **data-warehouse & ETL pipeline** that analyz
 13. docker compose exec airflow-webserver bash -lc 'dbt run --profiles-dir /opt/airflow/dbt --project-dir /opt/airflow/dbt --select gold'
 
 
-Kui vaja teha muudatusi pythoni failides, siis käivitada peale muudatuse tegemist:
-
+If you need to make changes in Python files:
 1. docker compose restart airflow-webserver airflow-scheduler
 
 ## How to run dbt test
@@ -50,18 +50,17 @@ Kui vaja teha muudatusi pythoni failides, siis käivitada peale muudatuse tegemi
 ![Airflow_DAG.png](Screenshots/Airflow_DAG.png)
 
 ### Demo Queries
-**Q1: How does monthly average temperature affect the volume of medication
-purchases?**
+**Q1: How does monthly average temperature affect the volume of medication purchases?**
 ![Demo_query_1.png](Screenshots/Demo_query_1.png)
 
-**Q2: Are there specific types of medications (cold/flu, allergy, depression) that show
-seasonal spikes related to weather conditions?**
+**Q2: Are there specific types of medications (cold/flu, allergy, depression) that show seasonal spikes related to weather conditions?**
 ![Demo_query_2.png](Screenshots/Demo_query_2.png)
 
-**Q3: Does extreme weather (heatwaves, cold) correlate with higher prescription
-rates for certain diagnoses?**
+**Q3: Does extreme weather (heatwaves, cold) correlate with higher prescription rates for certain diagnoses?**
 ![Demo_query_3.png](Screenshots/Demo_query_3.png)
 
+**Q4: Can weather patterns be used to forecast future medication demand (for example flu outbreaks during colder months, depression increases during colder months)?**
+![Demo_query_4.png](Screenshots/Demo_query_4.png)
 
 **Q5: How many of various medications should be supplied per period?**
 ![Demo_query_5.png](Screenshots/Demo_query_5.png)
