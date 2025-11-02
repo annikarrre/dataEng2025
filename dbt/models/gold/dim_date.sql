@@ -10,7 +10,6 @@ SELECT
     toMonth(month_start) AS month,
     toQuarter(month_start) AS quarter,
     formatDateTime(month_start, '%M') AS month_name,
-    concat(toString(toYear(month_start)), '-', formatDateTime(month_start, '%m')) AS year_month_label,
     CASE
         WHEN toMonth(month_start) IN (12, 1, 2) THEN 'Winter'
         WHEN toMonth(month_start) IN (3, 4, 5) THEN 'Spring'
