@@ -37,7 +37,7 @@ sun AS (
 SELECT
   cityHash64(concat(toString(m.date_id), toString(m.medication_id))) AS fact_id,
 
-  m.date_id,
+  m.date_id as date_id,
   m.medication_id,
 
   w.weather_id,
