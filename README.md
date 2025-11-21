@@ -36,6 +36,7 @@ This project implements a complete **data-warehouse & ETL pipeline** that analyz
 14. `docker compose exec airflow-webserver bash -lc 'dbt run --profiles-dir /opt/airflow/dbt --project-dir /opt/airflow/dbt --select gold'`
 
 For project 3 we created two users with two different roles in Clickhouse and gave them different permissions:
+
 16. `docker exec -it data_warehouse-clickhouse-1 clickhouse-client -u default --password mysecret --multiquery --queries-file=/sql/05_create_roles_users.sql`
 17. `docker exec -it data_warehouse-clickhouse-1 clickhouse-client -u default --password mysecret --multiquery --queries-file=/sql/06_create_masked_pseudo_view.sql`
 18. `docker exec -it data_warehouse-clickhouse-1 clickhouse-client -u default --password mysecret --multiquery --queries-file=/sql/07_grant_permissions.sql`
