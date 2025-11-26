@@ -177,6 +177,11 @@ services:
         condition: service_started
     restart: always
 
+networks:
+  data-network:
+    driver: bridge
+    name: data-pipeline-network
+    
 volumes:
   clickhouse_data: {}
   pgdata_airflow:
