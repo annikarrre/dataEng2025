@@ -1,4 +1,4 @@
-# Tervisekassa medications (monthly) → ClickHouse bronze.medications_monthly
+# Tervisekassa medications (monthly) → Iceberg bronze.medications_monthly
 
 from datetime import datetime, date
 from airflow import DAG
@@ -6,9 +6,15 @@ from airflow.operators.python import PythonOperator
 import os, glob, re, unicodedata
 import pandas as pd
 import numpy as np
+from pyiceberg.catalog import load_catalog
+from pyiceberg.schema import Schema
+from pyiceberg.types import (
+    NestedField, IntegerType, StringType, DateType, DoubleType
+)
+import pyarrow as pa
 
 DEFAULT_DATA_DIR = "/opt/airflow/datasets/medications"
-BATCH_SZ = 2_000  # smaller batches to avoid memory spikes
+BATCH_SZ = 2_000
 
 OUT_COLS = [
     "year","month","month_date","ingredient","package",
@@ -16,7 +22,6 @@ OUT_COLS = [
     "total_amount","hk_amount","over_ref_price","copay_no_trh","copay_with_trh"
 ]
 
-# Exact headers (as in your workbook)
 COL_MAP_EXACT = {
     "Aasta": "year",
     "Kuu": "month",
@@ -32,12 +37,80 @@ COL_MAP_EXACT = {
     "Patsiendi omaosaluse summa (sh TRH)": "copay_with_trh",
 }
 
-def _client():
-    import clickhouse_connect
-    return clickhouse_connect.get_client(
-        host="clickhouse", port=8123,
-        username="default", password="mysecret"
+# ---------- Iceberg catalog connection ----------
+
+def _get_catalog():
+    """Connect to REST catalog"""
+    catalog = load_catalog(
+        "rest",
+        **{
+            "uri": "http://iceberg-rest:8181",
+            "warehouse": "warehouse",
+        }
     )
+    return catalog
+
+def _get_or_create_table(catalog, truncate=True):
+    """Get or create the medications Iceberg table"""
+    namespace = "bronze"
+    table_name = "medications_monthly"
+    full_name = f"{namespace}.{table_name}"
+    
+    # Create namespace if it doesn't exist
+    try:
+        catalog.create_namespace(namespace)
+        print(f"[iceberg] Created namespace: {namespace}")
+    except Exception as e:
+        print(f"[iceberg] Namespace {namespace} already exists")
+    
+    # Define schema
+    schema = Schema(
+        NestedField(1, "year", IntegerType(), required=False),
+        NestedField(2, "month", IntegerType(), required=False),
+        NestedField(3, "month_date", DateType(), required=False),
+        NestedField(4, "ingredient", StringType(), required=False),
+        NestedField(5, "package", StringType(), required=False),
+        NestedField(6, "persons", IntegerType(), required=False),
+        NestedField(7, "prescriptions", IntegerType(), required=False),
+        NestedField(8, "packages_count", DoubleType(), required=False),
+        NestedField(9, "total_amount", DoubleType(), required=False),
+        NestedField(10, "hk_amount", DoubleType(), required=False),
+        NestedField(11, "over_ref_price", DoubleType(), required=False),
+        NestedField(12, "copay_no_trh", DoubleType(), required=False),
+        NestedField(13, "copay_with_trh", DoubleType(), required=False),
+    )
+    
+    # Try to load existing table
+    table_exists = False
+    try:
+        table = catalog.load_table(full_name)
+        table_exists = True
+        print(f"[iceberg] Loaded existing table: {full_name}")
+        
+        # Truncate if requested
+        if truncate:
+            print(f"[iceberg] Truncating table: {full_name}")
+            # Delete all data files by overwriting with empty dataset
+            table.overwrite(table.scan().to_arrow().slice(0, 0))
+            print(f"[iceberg] Table truncated successfully")
+            
+    except Exception as e:
+        print(f"[iceberg] Table {full_name} doesn't exist, creating new table...")
+    
+    # Create table if it doesn't exist
+    if not table_exists:
+        try:
+            table = catalog.create_table(
+                identifier=full_name,
+                schema=schema
+            )
+            print(f"[iceberg] Created table: {full_name}")
+        except Exception as e:
+            # If creation fails, try loading again (race condition)
+            print(f"[iceberg] Creation failed, trying to load existing table: {e}")
+            table = catalog.load_table(full_name)
+    
+    return table
 
 # ---------- utils ----------
 
@@ -77,7 +150,6 @@ def _to_int(v):
 
 _ROMAN = {"i":1,"ii":2,"iii":3,"iv":4,"v":5,"vi":6,"vii":7,"viii":8,"ix":9,"x":10,"xi":11,"xii":12}
 _MONTH_NAME_MAP = {
-    # Estonian
     "jaanuar":1, "jaan":1,
     "veebruar":2, "veebr":2, "vebr":2,
     "märts":3, "marts":3, "mrts":3,
@@ -90,7 +162,6 @@ _MONTH_NAME_MAP = {
     "oktoober":10, "okt":10,
     "november":11, "nov":11,
     "detsember":12, "dets":12, "dec":12,
-    # English safety net
     "january":1, "jan":1,
     "february":2, "feb":2,
     "march":3, "mar":3,
@@ -111,7 +182,6 @@ def _month_num(m):
     s = _norm(m)
     if s == "":
         return None
-    # numeric like "1", "01", "1.0"
     try:
         val = float(s)
         iv = int(round(val))
@@ -119,15 +189,12 @@ def _month_num(m):
             return iv
     except Exception:
         pass
-    # roman numerals
     s2 = s.lower().replace(".", "")
     if s2 in _ROMAN:
         return _ROMAN[s2]
-    # names (accent-insensitive)
     s3 = _strip_accents(s2)
     if s3 in _MONTH_NAME_MAP:
         return _MONTH_NAME_MAP[s3]
-    # fallback: trailing number (e.g., "2024-12")
     m2 = re.search(r"(\d{1,2})$", s3)
     if m2:
         iv = int(m2.group(1))
@@ -150,14 +217,12 @@ def _month_date(y, m):
 # ---------- parsing ----------
 
 def _read_one_xlsx(path: str) -> pd.DataFrame:
-    # first sheet, header row 0 (confirmed)
     df = pd.read_excel(path, sheet_name=0, header=0, engine="openpyxl")
     print(f"[meds] Raw columns: {list(df.columns)}")
     if df.empty:
         print("[meds][WARN] DataFrame empty after read_excel")
         return pd.DataFrame(columns=OUT_COLS)
 
-    # rename to canonical
     norm_to_canon = { _norm(k): v for k, v in COL_MAP_EXACT.items() }
     rename = {}
     for c in df.columns:
@@ -174,7 +239,6 @@ def _read_one_xlsx(path: str) -> pd.DataFrame:
         print(f"[meds][WARN] Missing required columns. Have: {list(df.columns)}")
         return pd.DataFrame(columns=OUT_COLS)
 
-    # keep relevant columns
     keep = list(required | {
         "persons","prescriptions","packages_count",
         "total_amount","hk_amount","over_ref_price","copay_no_trh","copay_with_trh"
@@ -182,12 +246,10 @@ def _read_one_xlsx(path: str) -> pd.DataFrame:
     keep = [c for c in keep if c in df.columns]
     df = df[keep].copy()
 
-    # drop obvious empties
     before = len(df)
     df = df.dropna(subset=["year","month"])
     print(f"[meds] Rows before dropna(year,month)={before}, after={len(df)}")
 
-    # build month_date and make month numeric (UInt8 safe)
     df["month_date"] = [_month_date(y, m) for y, m in zip(df["year"], df["month"])]
     df["month_num"] = [ _month_num(m) for m in df["month"] ]
     df = df[df["month_num"].notna()].copy()
@@ -198,7 +260,6 @@ def _read_one_xlsx(path: str) -> pd.DataFrame:
     df = df.dropna(subset=["month_date"])
     print(f"[meds] Rows before dropna(month_date)={before_md}, after={len(df)}")
 
-    # numeric coercions
     if "persons" in df.columns:        df["persons"]        = df["persons"].map(_to_int)
     if "prescriptions" in df.columns:  df["prescriptions"]  = df["prescriptions"].map(_to_int)
     if "packages_count" in df.columns: df["packages_count"] = df["packages_count"].map(_to_float)
@@ -206,11 +267,9 @@ def _read_one_xlsx(path: str) -> pd.DataFrame:
         if f in df.columns:
             df[f] = df[f].map(_to_float)
 
-    # strings
     df["ingredient"] = df["ingredient"].map(lambda x: None if _norm(x)=="" else str(x))
     df["package"]    = df["package"].map(lambda x: None if _norm(x)=="" else str(x))
 
-    # ensure all output cols exist & order them
     for c in OUT_COLS:
         if c not in df.columns:
             df[c] = None
@@ -219,20 +278,35 @@ def _read_one_xlsx(path: str) -> pd.DataFrame:
     print(f"[meds] Final sample:\n{df.head(3)}")
     return df
 
-_table_truncated = False
+# ---------- Iceberg write ----------
 
-def _insert_chunk(client, rows):
-    global _table_truncated
-    if not rows:
+def _write_to_iceberg(table, df_batch):
+    """Write a DataFrame batch to Iceberg table"""
+    if df_batch.empty:
         return
-    if not _table_truncated:
-        client.command("TRUNCATE TABLE bronze.medications_monthly")
-        _table_truncated = True
-    client.insert("bronze.medications_monthly", rows, column_names=OUT_COLS)
+    
+    # Convert int64 columns to int32 to match Iceberg IntegerType schema
+    int_cols = ['year', 'month', 'persons', 'prescriptions']
+    for col in int_cols:
+        if col in df_batch.columns and df_batch[col].notna().any():
+            df_batch[col] = df_batch[col].astype('Int32')  # nullable int32
+    
+    # Convert DataFrame to PyArrow Table
+    arrow_table = pa.Table.from_pandas(df_batch, preserve_index=False)
+    
+    # Append to Iceberg table
+    table.append(arrow_table)
+    print(f"[iceberg] Appended {len(df_batch)} rows to table")
+
+# ---------- main load function ----------
 
 def load_medications(**context):
     data_dir = context["params"].get("data_dir", DEFAULT_DATA_DIR)
-    client = _client()
+    
+    # Get Iceberg catalog and table
+    catalog = _get_catalog()
+    table = _get_or_create_table(catalog, truncate=True)
+    
     files = sorted(glob.glob(os.path.join(data_dir, "*.xlsx")))
     if not files:
         print(f"[meds] No .xlsx files in {data_dir}")
@@ -248,40 +322,45 @@ def load_medications(**context):
             print(f"[meds][WARN] 0 rows parsed from {os.path.basename(fp)}; skipping.")
             continue
 
-        batch = []
-        for row in df.itertuples(index=False, name=None):
-            batch.append(list(row))
-            if len(batch) >= BATCH_SZ:
-                _insert_chunk(client, batch)
-                total += len(batch)
-                batch = []
-        if batch:
-            _insert_chunk(client, batch)
-            total += len(batch)
+        # Write in batches to Iceberg
+        for start_idx in range(0, len(df), BATCH_SZ):
+            end_idx = min(start_idx + BATCH_SZ, len(df))
+            batch_df = df.iloc[start_idx:end_idx]
+            _write_to_iceberg(table, batch_df)
+            total += len(batch_df)
 
         print(f"[meds] Inserted rows from {os.path.basename(fp)}: {n}")
 
-    print(f"[meds] All files done. Total rows inserted: {total}")
+    print(f"[meds] All files done. Total rows written to Iceberg: {total}")
 
 def dq_check():
-    client = _client()
-    bad = client.query("""
-        SELECT count()
-        FROM bronze.medications_monthly
-        WHERE (year < 2000 OR year > 2100)
-           OR (month < 1 OR month > 12)
-           OR month_date IS NULL
-    """).result_rows[0][0]
+    """Data quality check - now reads from Iceberg"""
+    catalog = _get_catalog()
+    table = catalog.load_table("bronze.medications_monthly")
+    
+    # Scan table and convert to pandas for checking
+    scan = table.scan()
+    arrow_table = scan.to_arrow()
+    df = arrow_table.to_pandas()
+    
+    # Check data quality
+    bad = len(df[
+        (df['year'] < 2000) | (df['year'] > 2100) |
+        (df['month'] < 1) | (df['month'] > 12) |
+        (df['month_date'].isna())
+    ])
+    
     if bad:
         raise ValueError(f"Medications DQ failed: invalid rows={bad}")
-    print("Medications DQ passed ✅")
+    print(f"Medications DQ passed ✅ (checked {len(df)} rows)")
+
 
 with DAG(
-    dag_id="bronze_medication_ingest",  # match your filename / trigger
-    start_date=datetime(2025, 10, 1),   # <-- FIX: datetime, not date
+    dag_id="bronze_medication_ingest",
+    start_date=datetime(2025, 10, 1),
     schedule=None,
     catchup=False,
-    tags=["bronze","medications"],
+    tags=["bronze","medications","iceberg"],
     default_args={"owner": "you"},
     params={
         "data_dir": "/opt/airflow/datasets/medications",
