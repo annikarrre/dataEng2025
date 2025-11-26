@@ -46,8 +46,6 @@ services:
     volumes:
       - ./iceberg-warehouse:/warehouse
     restart: always
-    networks:
-      - data-network
     healthcheck:
       test: ["CMD", "curl -f http://localhost:8181/v1/config"]
       interval: 30s
@@ -145,8 +143,7 @@ services:
       clickhouse:
         condition: service_started
     restart: always
-    networks:
-      - data-network
+
 
   # --- Airflow Scheduler ---
   airflow-scheduler:
@@ -178,13 +175,6 @@ services:
       clickhouse:
         condition: service_started
     restart: always
-    networks:
-      - data-network
-
-networks:
-  data-network:
-    driver: bridge
-    name: data-pipeline-network
     
 volumes:
   clickhouse_data: {}
