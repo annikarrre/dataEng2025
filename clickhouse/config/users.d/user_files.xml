@@ -1,0 +1,5 @@
+<clickhouse>
+    <listen_host>0.0.0.0</listen_host>
+    <path>/var/lib/clickhouse/</path>
+    <user_files_path>/var/lib/clickhouse/user_files/</user_files_path>
+</clickhouse>
