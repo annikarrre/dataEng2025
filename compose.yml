@@ -145,6 +145,8 @@ services:
       clickhouse:
         condition: service_started
     restart: always
+    networks:
+      - data-network
 
   # --- Airflow Scheduler ---
   airflow-scheduler:
@@ -176,6 +178,8 @@ services:
       clickhouse:
         condition: service_started
     restart: always
+    networks:
+      - data-network
 
 networks:
   data-network:
