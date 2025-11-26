@@ -5,8 +5,11 @@ USER root
 RUN apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/*
 
 USER airflow
+RUN pip install pyiceberg
 COPY airflow/requirements.txt /opt/airflow/requirements.txt
 RUN pip install --no-cache-dir -r /opt/airflow/requirements.txt
+# Fix SQLAlchemy compatibility issue
+RUN pip install --force-reinstall 'SQLAlchemy>=1.4.0,<2.0.0'
 
 # Patch Py3.8 typing issue in clickhouse-connect 0.6.22
 RUN python - <<'PY'
