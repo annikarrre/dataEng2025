@@ -125,6 +125,8 @@ services:
       AIRFLOW_CONN_CLICKHOUSE_HTTP: ${AIRFLOW_CONN_CLICKHOUSE_HTTP}
       AIRFLOW__CORE__LOAD_EXAMPLES: "false"
       AIRFLOW__API__AUTH_BACKENDS: "airflow.api.auth.backend.basic_auth"
+      PYTHONPATH: /home/airflow/.local/lib/python3.8/site-packages  # to fix dbt issue
+      PATH: /home/airflow/.local/bin:/usr/local/bin:/usr/bin:/bin # to fix dbt issue
     ports:
       - "8080:8080"
     volumes:
@@ -160,6 +162,8 @@ services:
       AIRFLOW__DATABASE__SQL_ALCHEMY_ENGINE_ARGS: '{}'
       AIRFLOW_CONN_CLICKHOUSE_HTTP: ${AIRFLOW_CONN_CLICKHOUSE_HTTP}
       AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      PYTHONPATH: /home/airflow/.local/lib/python3.8/site-packages  # to fix dbt issue
+      PATH: /home/airflow/.local/bin:/usr/local/bin:/usr/bin:/bin # to fix dbt issue
     volumes:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
