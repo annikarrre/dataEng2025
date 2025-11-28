@@ -52,14 +52,6 @@ If you need to make changes in Python files:
 1. `docker compose exec airflow-webserver bash -lc 'dbt test --project-dir /opt/airflow/dbt --profiles-dir /opt/airflow/dbt --select fact_medication_sales'`   
 2. `docker compose exec airflow-webserver bash -lc 'dbt test --project-dir /opt/airflow/dbt --profiles-dir /opt/airflow/dbt --select assert_positive_total_packages'`
 
-
-## How to run OpenMetaData dags (because they did not run automatically)
-
-1. `docker exec -it data_warehouse-clickhouse-1 clickhouse-client -u default --password mysecret --multiquery --queries-file=/sql/08_openmetadata.sql`
-2. docker compose exec ingestion airflow dags list
-3. docker compose exec ingestion airflow dags trigger TAG-ID
-
-
 ## Screenshots
 ### Airflow DAG
 ![Airflow_DAG.png](Screenshots/Airflow_DAG.png)
@@ -79,6 +71,21 @@ If you need to make changes in Python files:
 
 **Q5: How many of various medications should be supplied per period?**
 ![Demo_query_5.png](Screenshots/Demo_query_5.png)
+
+## How to run OpenMetaData
+
+First make sure that you have the user for OMD
+1. `docker exec -it data_warehouse-clickhouse-1 clickhouse-client -u default --password mysecret --multiquery --queries-file=/sql/08_openmetadata.sql`
+Then go to localhost:8585
+2. Log in to OMD
+3. Open Settings - Services - Databases - Add new Service - Clickhouse - Set configurations: openmetadata_user, openmetadata_password, clickhouse:8123, Test connection, Save
+4. Run the dag manually (since we did not manage to have it automatically)
+5. Open gold database
+6. Add descriptions
+7. For tests open from the left menu Data Quality and add new test case
+For running the DAG commands:
+8. docker compose exec ingestion airflow dags list
+9. docker compose exec ingestion airflow dags trigger TAG-ID
 
 **Project 3 - OpenMetaData descriptions & tests**
 ![openmetadata_tests.png](Screenshots/openmetadata_tests.png)
