@@ -53,6 +53,12 @@ If you need to make changes in Python files:
 2. `docker compose exec airflow-webserver bash -lc 'dbt test --project-dir /opt/airflow/dbt --profiles-dir /opt/airflow/dbt --select assert_positive_total_packages'`
 
 
+## How to run OpenMetaData dags (because they did not run automatically)
+
+1. docker compose exec ingestion airflow dags list
+2. docker compose exec ingestion airflow dags trigger TAG-ID
+
+
 ## Screenshots
 ### Airflow DAG
 ![Airflow_DAG.png](Screenshots/Airflow_DAG.png)
@@ -72,3 +78,8 @@ If you need to make changes in Python files:
 
 **Q5: How many of various medications should be supplied per period?**
 ![Demo_query_5.png](Screenshots/Demo_query_5.png)
+
+**Project 3 - OpenMetaData descriptions & tests**
+![openmetadata_tests.png](Screenshots/openmetadata_tests.png)
+![openmetadata_descriptions.png](Screenshots/openmetadata_descriptions.png)
+

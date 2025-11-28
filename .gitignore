@@ -4,7 +4,7 @@ pgdata/
 pgdata_airflow/
 pgtmp/
 clickhouse_data/
-
+docker-volume/
 airflow/logs/
 airflow/datasets/*
 dags/__pycache__
