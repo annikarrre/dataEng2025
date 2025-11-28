@@ -55,8 +55,9 @@ If you need to make changes in Python files:
 
 ## How to run OpenMetaData dags (because they did not run automatically)
 
-1. docker compose exec ingestion airflow dags list
-2. docker compose exec ingestion airflow dags trigger TAG-ID
+1. `docker exec -it data_warehouse-clickhouse-1 clickhouse-client -u default --password mysecret --multiquery --queries-file=/sql/08_openmetadata.sql`
+2. docker compose exec ingestion airflow dags list
+3. docker compose exec ingestion airflow dags trigger TAG-ID
 
 
 ## Screenshots
