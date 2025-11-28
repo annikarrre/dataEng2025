@@ -77,7 +77,7 @@ If you need to make changes in Python files:
 First make sure that you have the user for OMD
 1. `docker exec -it data_warehouse-clickhouse-1 clickhouse-client -u default --password mysecret --multiquery --queries-file=/sql/08_openmetadata.sql`
 Then go to localhost:8585
-2. Log in to OMD
+2. Log in to OMD usr: admin@open-metadata.org pwd: admin
 3. Open Settings - Services - Databases - Add new Service - Clickhouse - Set configurations: openmetadata_user, openmetadata_password, clickhouse:8123, Test connection, Save
 4. Run the dag manually (since we did not manage to have it automatically)
 5. Open gold database
