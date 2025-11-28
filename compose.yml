@@ -1,4 +1,7 @@
+version: "3.9"
+
 services:
+
   # --- Airflow metadata database ---
   airflow-db:
     image: postgres:16.4
@@ -28,29 +31,10 @@ services:
       - ./airflow/datasets:/var/lib/clickhouse/user_files
       - ./clickhouse/sql:/sql
       - ./clickhouse/config/users.d:/etc/clickhouse-server/users.d
-      - ./iceberg-warehouse:/warehouse
     ulimits:
       nofile:
         soft: 262144
         hard: 262144
-        
-  # --- Iceberg ---
-  iceberg-rest:
-    image: tabulario/iceberg-rest:latest
-    container_name: iceberg-rest
-    ports:
-      - "8181:8181"
-    environment:
-      - CATALOG_WAREHOUSE=/warehouse
-      - CATALOG_IO__IMPL=org.apache.iceberg.hadoop.HadoopFileIO
-    volumes:
-      - ./iceberg-warehouse:/warehouse
-    restart: always
-    healthcheck:
-      test: ["CMD", "curl -f http://localhost:8181/v1/config"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
   # --- Pipeline Postgres for other data ---
   db:
@@ -69,7 +53,7 @@ services:
       retries: 5
     restart: always
 
-  # --- pgAdmin UI for both databases ---
+  # --- pgAdmin UI ---
   pgadmin:
     image: elestio/pgadmin:REL-8_10
     environment:
@@ -116,17 +100,13 @@ services:
       context: .
       dockerfile: Dockerfile.airflow
     command: webserver
-    user: "0:0" # fix for Airflow permissions
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${AIRFLOW_DB_USER}:${AIRFLOW_DB_PASSWORD}@airflow-db:5432/${AIRFLOW_DB_NAME}
       AIRFLOW_CONN_PIPELINE_DB: ${AIRFLOW_CONN_PIPELINE_DB}
-      AIRFLOW__DATABASE__SQL_ALCHEMY_ENGINE_ARGS: '{}'
       AIRFLOW_CONN_CLICKHOUSE_HTTP: ${AIRFLOW_CONN_CLICKHOUSE_HTTP}
       AIRFLOW__CORE__LOAD_EXAMPLES: "false"
       AIRFLOW__API__AUTH_BACKENDS: "airflow.api.auth.backend.basic_auth"
-      PYTHONPATH: /home/airflow/.local/lib/python3.8/site-packages  # to fix dbt issue
-      PATH: /home/airflow/.local/bin:/usr/local/bin:/usr/bin:/bin # to fix dbt issue
     ports:
       - "8080:8080"
     volumes:
@@ -135,7 +115,6 @@ services:
       - ./airflow/datasets:/opt/airflow/datasets
       - ./airflow/include:/opt/airflow/include
       - ./dbt:/opt/airflow/dbt
-      - ./iceberg-warehouse:/warehouse
     depends_on:
       airflow-init:
         condition: service_completed_successfully
@@ -146,7 +125,6 @@ services:
       clickhouse:
         condition: service_started
     restart: always
-
 
   # --- Airflow Scheduler ---
   airflow-scheduler:
@@ -154,23 +132,18 @@ services:
       context: .
       dockerfile: Dockerfile.airflow
     command: scheduler
-    user: "0:0" # fix for Airflow permissions
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${AIRFLOW_DB_USER}:${AIRFLOW_DB_PASSWORD}@airflow-db:5432/${AIRFLOW_DB_NAME}
       AIRFLOW_CONN_PIPELINE_DB: ${AIRFLOW_CONN_PIPELINE_DB}
-      AIRFLOW__DATABASE__SQL_ALCHEMY_ENGINE_ARGS: '{}'
       AIRFLOW_CONN_CLICKHOUSE_HTTP: ${AIRFLOW_CONN_CLICKHOUSE_HTTP}
       AIRFLOW__CORE__LOAD_EXAMPLES: "false"
-      PYTHONPATH: /home/airflow/.local/lib/python3.8/site-packages  # to fix dbt issue
-      PATH: /home/airflow/.local/bin:/usr/local/bin:/usr/bin:/bin # to fix dbt issue
     volumes:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
       - ./airflow/datasets:/opt/airflow/datasets
       - ./airflow/include:/opt/airflow/include
       - ./dbt:/opt/airflow/dbt
-      - ./iceberg-warehouse:/warehouse
     depends_on:
       airflow-init:
         condition: service_completed_successfully
@@ -181,8 +154,153 @@ services:
       clickhouse:
         condition: service_started
     restart: always
-    
+
+  # --- OpenMetadata MySQL ---
+  mysql:
+    container_name: openmetadata_mysql
+    image: docker.getcollate.io/openmetadata/db:1.10.7
+    command: "--sort_buffer_size=10M"
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+    expose:
+      - 3306
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./docker-volume/db-data:/var/lib/mysql
+    healthcheck:
+      test: mysql --user=root --password=$$MYSQL_ROOT_PASSWORD --silent --execute "use openmetadata_db"
+      interval: 15s
+      timeout: 10s
+      retries: 10
+
+  # --- OpenMetadata Elasticsearch ---
+  elasticsearch:
+    container_name: openmetadata_elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.4
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms1024m -Xmx1024m
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    healthcheck:
+      test: "curl -s http://localhost:9200/_cluster/health?pretty | grep status | grep -qE 'green|yellow' || exit 1"
+      interval: 15s
+      timeout: 10s
+      retries: 10
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+
+  # --- OpenMetadata Migration ---
+  execute-migrate-all:
+    container_name: execute_migrate_all
+    image: docker.getcollate.io/openmetadata/server:1.10.7
+    command: "./bootstrap/openmetadata-ops.sh migrate"
+    environment:
+      PIPELINE_SERVICE_CLIENT_ENABLED: "true"
+      PIPELINE_SERVICE_CLIENT_ENDPOINT: "http://openmetadata-ingestion:8080"
+      PIPELINE_SERVICE_CLIENT_VERIFY_SSL: "no-ssl"
+      DB_DRIVER_CLASS: com.mysql.cj.jdbc.Driver
+      DB_SCHEME: mysql
+      DB_USER: openmetadata_user
+      DB_USER_PASSWORD: openmetadata_password
+      DB_HOST: mysql
+      DB_PORT: 3306
+      OM_DATABASE: openmetadata_db
+      ELASTICSEARCH_HOST: elasticsearch
+      ELASTICSEARCH_PORT: 9200
+      ELASTICSEARCH_SCHEME: http
+      SERVER_HOST_API_URL: http://openmetadata-server:8585/api
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+
+  # --- OpenMetadata Server ---
+  openmetadata-server:
+    container_name: openmetadata_server
+    restart: always
+    image: docker.getcollate.io/openmetadata/server:1.10.7
+    environment:
+      PIPELINE_SERVICE_CLIENT_ENABLED: "true"
+      PIPELINE_SERVICE_CLIENT_ENDPOINT: "http://openmetadata-ingestion:8080"
+      PIPELINE_SERVICE_CLIENT_VERIFY_SSL: "no-ssl"
+      DB_DRIVER_CLASS: com.mysql.cj.jdbc.Driver
+      DB_SCHEME: mysql
+      DB_USER: openmetadata_user
+      DB_USER_PASSWORD: openmetadata_password
+      DB_HOST: mysql
+      DB_PORT: 3306
+      OM_DATABASE: openmetadata_db
+      ELASTICSEARCH_HOST: elasticsearch
+      ELASTICSEARCH_PORT: 9200
+      ELASTICSEARCH_SCHEME: http
+      SERVER_HOST_API_URL: http://openmetadata-server:8585/api
+    expose:
+      - 8585
+      - 8586
+    ports:
+      - "8585:8585"
+      - "8586:8586"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      execute-migrate-all:
+        condition: service_completed_successfully
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:8586/healthcheck" ]
+
+  # --- FIXED INGESTION SERVICE ---
+  ingestion:
+    container_name: openmetadata-ingestion
+    image: docker.getcollate.io/openmetadata/ingestion:1.10.7
+
+    depends_on:
+      elasticsearch:
+        condition: service_started
+      mysql:
+        condition: service_healthy
+      openmetadata-server:
+        condition: service_started
+
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+
+      # FIXED CONNECTION
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: mysql+mysqldb://airflow_user:airflow_pass@openmetadata_mysql:3306/airflow_db
+
+      AIRFLOW__API__AUTH_BACKENDS: "airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session"
+
+      DB_HOST: openmetadata_mysql
+      DB_PORT: 3306
+      DB_SCHEME: mysql+mysqldb
+      DB_USER: airflow_user
+      DB_PASSWORD: airflow_pass
+
+    entrypoint: /bin/bash
+    command:
+      - "/opt/airflow/ingestion_dependency.sh"
+
+    ports:
+      - "9001:8080"
+
+    volumes:
+      - ingestion-volume-dag-airflow:/opt/airflow/dag_generated_configs
+      - ingestion-volume-dags:/opt/airflow/dags
+      - ingestion-volume-tmp:/tmp
+
+
 volumes:
   clickhouse_data: {}
   pgdata_airflow:
   pgdata:
+  ingestion-volume-dag-airflow:
+  ingestion-volume-dags:
+  ingestion-volume-tmp:
+  es-data:
