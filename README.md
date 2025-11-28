@@ -83,9 +83,10 @@ Then go to localhost:8585
 5. Open gold database
 6. Add descriptions
 7. For tests open from the left menu Data Quality and add new test case
+
 For running the DAG commands:
-8. docker compose exec ingestion airflow dags list
-9. docker compose exec ingestion airflow dags trigger TAG-ID
+1. docker compose exec ingestion airflow dags list
+2. docker compose exec ingestion airflow dags trigger TAG-ID
 
 **Project 3 - OpenMetaData descriptions & tests**
 ![openmetadata_tests.png](Screenshots/openmetadata_tests.png)
