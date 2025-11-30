@@ -1,16 +1,36 @@
 FROM apache/airflow:2.8.1
 
-# git is needed by dbt
 USER root
-RUN apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/*
+
+# Install system dependencies including Java for PySpark
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      git \
+      build-essential \
+      gcc \
+      g++ \
+      python3-dev \
+      default-jre-headless \
+    && rm -rf /var/lib/apt/lists/*
+
+# Find and set JAVA_HOME
+RUN JAVA_BIN=$(which java) && \
+    JAVA_HOME_PATH=$(readlink -f $JAVA_BIN | sed 's:/bin/java::') && \
+    echo "export JAVA_HOME=$JAVA_HOME_PATH" >> /etc/profile.d/java.sh && \
+    echo "export PATH=\$JAVA_HOME/bin:\$PATH" >> /etc/profile.d/java.sh && \
+    cat /etc/profile.d/java.sh
+
+# Set JAVA_HOME for build time
+ENV JAVA_HOME=/usr/lib/jvm/default-java
+ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
 USER airflow
-COPY airflow/requirements.txt /opt/airflow/requirements.txt
-RUN pip install --no-cache-dir -r /opt/airflow/requirements.txt
-# Fix SQLAlchemy compatibility issue
-# RUN pip install --force-reinstall 'SQLAlchemy>=1.4.0,<2.0.0' !!! This will break dbt
 
-# Patch Py3.8 typing issue in clickhouse-connect 0.6.22
+COPY airflow/requirements.txt /opt/airflow/requirements.txt
+
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir --upgrade -r /opt/airflow/requirements.txt
+
+# Patch clickhouse-connect (keep this)
 RUN python - <<'PY'
 import clickhouse_connect, pathlib, typing
 p = pathlib.Path(clickhouse_connect.__file__).parent / 'datatypes' / 'network.py'
