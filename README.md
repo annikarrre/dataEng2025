@@ -54,6 +54,7 @@ If you need to make changes in Python files:
 ## Screenshots
 ### Airflow DAG
 ![Airflow_DAG.png](Screenshots/Airflow_DAG.png)
+![iceberg_dag_l.jpg](Screenshots/iceberg_dag_l.jpg)
 
 ### Demo Queries
 **Q1: How does monthly average temperature affect the volume of medication purchases?**
