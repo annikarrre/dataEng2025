@@ -72,6 +72,27 @@ If you need to make changes in Python files:
 **Q5: How many of various medications should be supplied per period?**
 ![Demo_query_5.png](Screenshots/Demo_query_5.png)
 
+
+### Demo Queries (Project3 ) for full and limited users
+**1.1 Retrieve the top 10 medication packages for February 2025, ranked by the total number of persons (full view)**
+![1_full.png](Screenshots/1_full.png)
+
+**1.2 Retrieve the top 10 medication packages for February 2025, ranked by the total number of persons (limited/masked view)**
+![1_masked.png](Screenshots/1_masked.png)
+
+**2.1 Calculate sales metrics per medication package for July 2025 and ranks them by the number of packages sold (full view)**
+![2_full.png](Screenshots/2_full.png)
+
+**2.2 Calculate sales metrics per medication package for July 2025 and ranks them by the number of packages sold (limited/masked view)**
+![2_masked.png](Screenshots/2_masked.png)
+
+**3.1 Find the top 10 ingredients by total packages sold in October 2024 (full view)**
+![3_full.png](Screenshots/3_full.png)
+
+**3.2 Find the top 10 ingredients by total packages sold in October 2024 (limited/masked view)**
+![3_masked.png](Screenshots/3_masked.png)
+
+
 ## How to run OpenMetaData
 
 First make sure that you have the user for OMD

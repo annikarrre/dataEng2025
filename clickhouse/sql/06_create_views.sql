@@ -22,3 +22,20 @@ FROM model_gold.dim_medications;
 CREATE OR REPLACE VIEW model_gold.v_medications_full AS
 SELECT * FROM model_gold.dim_medications;
 
+CREATE OR REPLACE VIEW model_gold.v_weather_full AS
+SELECT * FROM model_gold.dim_weather;
+
+CREATE OR REPLACE VIEW model_gold.v_sunshine_full AS
+SELECT * FROM model_gold.dim_sunshine;
+
+CREATE OR REPLACE VIEW model_gold.v_date_full AS
+SELECT * FROM model_gold.dim_date;
+
+CREATE OR REPLACE VIEW model_gold.v_weather_masked AS
+SELECT * FROM model_gold.dim_weather;
+
+CREATE OR REPLACE VIEW model_gold.v_sunshine_masked AS
+SELECT * FROM model_gold.dim_sunshine;
+
+CREATE OR REPLACE VIEW model_gold.v_date_masked AS
+SELECT * FROM model_gold.dim_date;
