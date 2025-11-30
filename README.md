@@ -53,7 +53,7 @@ If you need to make changes in Python files:
 
 ## Screenshots
 ### Airflow DAG
-![Airflow_DAG.png](Screenshots/Airflow_DAG.png)
+![Airflow_DAGs.png](Screenshots/Airflow_DAGs.png)
 ![iceberg_dag_l.jpg](Screenshots/iceberg_dag_l.jpg)
 
 ### Demo Queries
