@@ -34,7 +34,7 @@ services:
         soft: 262144
         hard: 262144
         
-  # --- Iceberg ---
+   # --- Iceberg ---
   iceberg-rest:
     image: tabulario/iceberg-rest:latest
     container_name: iceberg-rest
@@ -102,6 +102,7 @@ services:
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${AIRFLOW_DB_USER}:${AIRFLOW_DB_PASSWORD}@airflow-db:5432/${AIRFLOW_DB_NAME}
+      AIRFLOW__DATABASE__SQL_ALCHEMY_ENGINE_ARGS: '{"pool_pre_ping": true}'    
     volumes:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
@@ -125,8 +126,6 @@ services:
       AIRFLOW_CONN_CLICKHOUSE_HTTP: ${AIRFLOW_CONN_CLICKHOUSE_HTTP}
       AIRFLOW__CORE__LOAD_EXAMPLES: "false"
       AIRFLOW__API__AUTH_BACKENDS: "airflow.api.auth.backend.basic_auth"
-      PYTHONPATH: /home/airflow/.local/lib/python3.8/site-packages  # to fix dbt issue
-      PATH: /home/airflow/.local/bin:/usr/local/bin:/usr/bin:/bin # to fix dbt issue
     ports:
       - "8080:8080"
     volumes:
@@ -162,8 +161,6 @@ services:
       AIRFLOW__DATABASE__SQL_ALCHEMY_ENGINE_ARGS: '{}'
       AIRFLOW_CONN_CLICKHOUSE_HTTP: ${AIRFLOW_CONN_CLICKHOUSE_HTTP}
       AIRFLOW__CORE__LOAD_EXAMPLES: "false"
-      PYTHONPATH: /home/airflow/.local/lib/python3.8/site-packages  # to fix dbt issue
-      PATH: /home/airflow/.local/bin:/usr/local/bin:/usr/bin:/bin # to fix dbt issue
     volumes:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
