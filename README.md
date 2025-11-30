@@ -27,13 +27,12 @@ This project implements a complete **data-warehouse & ETL pipeline** that analyz
 5. `docker compose up -d --build`
 6. `docker exec -it data_warehouse-clickhouse-1 clickhouse-client -u default --password mysecret --multiquery --queries-file=/sql/01_create_databases.sql`
 7. `docker exec -it data_warehouse-clickhouse-1 clickhouse-client -u default --password mysecret --multiquery --queries-file=/sql/02_create_bronze_sunshine.sql`
-8. `docker compose exec airflow-webserver airflow dags trigger bronze_sunshine_ingest`
+8. `docker compose exec airflow-webserver airflow dags trigger bronze_sunshine_ingest_iceberg`
 9. `docker exec -it data_warehouse-clickhouse-1 clickhouse-client -u default --password mysecret --multiquery --queries-file=/sql/02_create_bronze_weather.sql`
 10. `docker compose exec airflow-webserver airflow dags trigger bronze_weather_ingest`
 11. `docker exec -it data_warehouse-clickhouse-1 clickhouse-client -u default --password mysecret --multiquery --queries-file=/sql/02_create_bronze_medication.sql`
 12. `docker compose exec airflow-webserver airflow dags trigger bronze_medication_ingest`
-13. `docker compose exec airflow-webserver airflow dags trigger iceberg_to_clickhouse_sync`
-14. `docker compose exec airflow-webserver bash -lc   'dbt run --profiles-dir /opt/airflow/dbt --project-dir /opt/airflow/dbt --select silver'`
+13. `docker compose exec airflow-webserver bash -lc   'dbt run --profiles-dir /opt/airflow/dbt --project-dir /opt/airflow/dbt --select silver'`
 15. `docker compose exec airflow-webserver bash -lc 'dbt run --profiles-dir /opt/airflow/dbt --project-dir /opt/airflow/dbt --select gold'`
 
 For project 3 we created two users with two different roles in Clickhouse and gave them different permissions:
